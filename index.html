@@ -1,0 +1,905 @@
+<!doctype html>
+<html lang="en" class="h-full">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trackercel</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="/_sdk/element_sdk.js"></script>
+  <script src="/_sdk/data_sdk.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+  <style>
+    body {
+      box-sizing: border-box;
+    }
+    * {
+      font-family: 'Space Grotesk', sans-serif;
+    }
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .gradient-bg {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+    }
+    .card-glass {
+      background: rgba(30, 41, 59, 0.7);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(99, 102, 241, 0.2);
+    }
+    .input-dark {
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+    }
+    .input-dark:focus {
+      border-color: #6366f1;
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    }
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    }
+    .holiday-badge {
+      background: linear-gradient(135deg, #ef4444 0%, #f97316 100%);
+    }
+    .pto-badge {
+      background: linear-gradient(135deg, #06b6d4 0%, #0ea5e9 100%);
+    }
+    .scrollbar-thin::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .scrollbar-thin::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.5);
+    }
+    .scrollbar-thin::-webkit-scrollbar-thumb {
+      background: rgba(99, 102, 241, 0.5);
+      border-radius: 3px;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-in {
+      animation: fadeIn 0.3s ease-out forwards;
+    }
+    .tab-active {
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+      color: white;
+    }
+  </style>
+  <style>@view-transition { navigation: auto; }</style>
+ </head>
+ <body class="h-full gradient-bg text-slate-100 overflow-auto">
+  <div id="app" class="min-h-full w-full p-4 md:p-6"><!-- Header -->
+   <header class="mb-6 animate-fade-in">
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+     <div>
+      <h1 id="app-title" class="text-3xl md:text-4xl font-bold bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">Trackercel</h1>
+      <p class="text-slate-400 mt-1">Time Tracking &amp; Planning Dashboard</p>
+     </div>
+     <div class="flex items-center gap-3"><select id="year-select" class="input-dark rounded-lg px-4 py-2 text-slate-200 outline-none transition-all"> <option value="2026">2026</option> <option value="2027">2027</option> <option value="2028">2028</option> </select> <select id="month-select" class="input-dark rounded-lg px-4 py-2 text-slate-200 outline-none transition-all"> <option value="0">January</option> <option value="1">February</option> <option value="2">March</option> <option value="3">April</option> <option value="4">May</option> <option value="5">June</option> <option value="6">July</option> <option value="7">August</option> <option value="8">September</option> <option value="9">October</option> <option value="10">November</option> <option value="11">December</option> </select>
+     </div>
+    </div>
+   </header><!-- Tabs -->
+   <div class="flex gap-2 mb-6 animate-fade-in" style="animation-delay: 0.1s;"><button id="tab-tracker" class="tab-active px-4 py-2 rounded-lg font-medium transition-all" onclick="switchTab('tracker')"> 📊 Time Tracker </button> <button id="tab-goal" class="px-4 py-2 rounded-lg font-medium bg-slate-700/50 hover:bg-slate-600/50 transition-all" onclick="switchTab('goal')"> 🎯 Goal Planner </button> <button id="tab-pto" class="px-4 py-2 rounded-lg font-medium bg-slate-700/50 hover:bg-slate-600/50 transition-all" onclick="switchTab('pto')"> 🏖️ Time Off </button>
+   </div><!-- Time Tracker Tab -->
+   <div id="tracker-content" class="space-y-6"><!-- Stats Cards -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 animate-fade-in" style="animation-delay: 0.2s;">
+     <div class="card-glass rounded-xl p-4">
+      <p class="text-slate-400 text-sm">Total Hours</p>
+      <p id="stat-total" class="text-2xl font-bold text-indigo-400 mono">0.0</p>
+     </div>
+     <div class="card-glass rounded-xl p-4">
+      <p class="text-slate-400 text-sm">Working Days</p>
+      <p id="stat-days" class="text-2xl font-bold text-purple-400 mono">0</p>
+     </div>
+     <div class="card-glass rounded-xl p-4">
+      <p class="text-slate-400 text-sm">Avg Hours/Day</p>
+      <p id="stat-avg" class="text-2xl font-bold text-pink-400 mono">0.0</p>
+     </div>
+     <div class="card-glass rounded-xl p-4">
+      <p class="text-slate-400 text-sm">Holidays</p>
+      <p id="stat-holidays" class="text-2xl font-bold text-orange-400 mono">0</p>
+     </div>
+    </div><!-- Input Section -->
+    <div class="card-glass rounded-xl p-5 animate-fade-in" style="animation-delay: 0.3s;">
+     <h2 id="hours-label" class="text-lg font-semibold mb-4 text-slate-200">Log Hours</h2>
+     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div><label class="block text-slate-400 text-sm mb-1">Date</label> <input type="date" id="input-date" class="input-dark rounded-lg px-4 py-2 w-full text-slate-200 outline-none transition-all">
+      </div>
+      <div><label class="block text-slate-400 text-sm mb-1">Hours</label> <input type="number" id="input-hours" step="0.5" min="0" max="24" placeholder="8.0" class="input-dark rounded-lg px-4 py-2 w-full text-slate-200 outline-none transition-all">
+      </div>
+      <div><label class="block text-slate-400 text-sm mb-1">Notes (optional)</label> <input type="text" id="input-notes" placeholder="Project name..." class="input-dark rounded-lg px-4 py-2 w-full text-slate-200 outline-none transition-all">
+      </div>
+      <div class="flex items-end"><button id="btn-add" onclick="addEntry()" class="btn-primary w-full py-2 rounded-lg font-medium text-white transition-all hover:shadow-lg hover:shadow-indigo-500/25"> + Add Entry </button>
+      </div>
+     </div>
+    </div><!-- Calendar Grid -->
+    <div class="card-glass rounded-xl p-5 animate-fade-in" style="animation-delay: 0.4s;">
+     <div class="flex items-center justify-between mb-4">
+      <h2 class="text-lg font-semibold text-slate-200">Monthly Overview</h2><button onclick="exportToExcel()" class="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 px-4 py-2 rounded-lg font-medium transition-all">
+       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+       </svg> Export Excel </button>
+     </div>
+     <div class="grid grid-cols-7 gap-1 text-center text-sm mb-2">
+      <div class="text-slate-400 font-medium py-2">
+       Sun
+      </div>
+      <div class="text-slate-400 font-medium py-2">
+       Mon
+      </div>
+      <div class="text-slate-400 font-medium py-2">
+       Tue
+      </div>
+      <div class="text-slate-400 font-medium py-2">
+       Wed
+      </div>
+      <div class="text-slate-400 font-medium py-2">
+       Thu
+      </div>
+      <div class="text-slate-400 font-medium py-2">
+       Fri
+      </div>
+      <div class="text-slate-400 font-medium py-2">
+       Sat
+      </div>
+     </div>
+     <div id="calendar-grid" class="grid grid-cols-7 gap-1"><!-- Calendar days will be rendered here -->
+     </div>
+    </div><!-- Entries List -->
+    <div class="card-glass rounded-xl p-5 animate-fade-in" style="animation-delay: 0.5s;">
+     <h2 class="text-lg font-semibold mb-4 text-slate-200">Time Entries</h2>
+     <div id="entries-list" class="space-y-2 max-h-64 overflow-y-auto scrollbar-thin">
+      <p class="text-slate-500 text-center py-4">No entries yet. Start logging your hours!</p>
+     </div>
+    </div>
+   </div><!-- Goal Planner Tab -->
+   <div id="goal-content" class="space-y-6 hidden">
+    <div class="card-glass rounded-xl p-5 animate-fade-in">
+     <h2 id="goal-label" class="text-lg font-semibold mb-4 text-slate-200">🎯 Hours Goal Calculator</h2>
+     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div><label class="block text-slate-400 text-sm mb-1">Target Hours</label> <input type="number" id="goal-hours" min="1" placeholder="160" class="input-dark rounded-lg px-4 py-2 w-full text-slate-200 outline-none transition-all">
+      </div>
+      <div><label class="block text-slate-400 text-sm mb-1">Time Period</label> <select id="goal-period" class="input-dark rounded-lg px-4 py-2 w-full text-slate-200 outline-none transition-all"> <option value="1">1 Week</option> <option value="2">2 Weeks</option> <option value="4" selected>4 Weeks</option> <option value="month">1 Month</option> <option value="quarter">3 Months</option> </select>
+      </div>
+      <div class="flex items-end"><button onclick="calculateGoal()" class="btn-primary w-full py-2 rounded-lg font-medium text-white transition-all hover:shadow-lg hover:shadow-indigo-500/25"> Calculate </button>
+      </div>
+     </div>
+     <div id="goal-result" class="hidden">
+      <div class="bg-slate-800/50 rounded-xl p-5 border border-indigo-500/30">
+       <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+        <div>
+         <p class="text-slate-400 text-sm">Working Days</p>
+         <p id="goal-workdays" class="text-2xl font-bold text-indigo-400 mono">0</p>
+        </div>
+        <div>
+         <p class="text-slate-400 text-sm">Holidays</p>
+         <p id="goal-holidays" class="text-2xl font-bold text-orange-400 mono">0</p>
+        </div>
+        <div>
+         <p class="text-slate-400 text-sm">Hours/Day Needed</p>
+         <p id="goal-daily" class="text-2xl font-bold text-emerald-400 mono">0.0</p>
+        </div>
+        <div>
+         <p class="text-slate-400 text-sm">Hours/Week</p>
+         <p id="goal-weekly" class="text-2xl font-bold text-purple-400 mono">0.0</p>
+        </div>
+       </div>
+       <div id="goal-schedule" class="mt-4 pt-4 border-t border-slate-700"><!-- Daily schedule will appear here -->
+       </div>
+      </div>
+     </div>
+    </div><!-- Holiday Reference -->
+    <div class="card-glass rounded-xl p-5 animate-fade-in" style="animation-delay: 0.1s;">
+     <h2 class="text-lg font-semibold mb-4 text-slate-200">📅 US Federal Holidays</h2>
+     <div id="holiday-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-64 overflow-y-auto scrollbar-thin"><!-- Holidays will be rendered here -->
+     </div>
+    </div>
+   </div><!-- Time Off Tab -->
+   <div id="pto-content" class="space-y-6 hidden">
+    <div class="card-glass rounded-xl p-5 animate-fade-in">
+     <h2 class="text-lg font-semibold mb-4 text-slate-200">🏖️ Log Time Off</h2>
+     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div><label class="block text-slate-400 text-sm mb-1">Date</label> <input type="date" id="pto-date" class="input-dark rounded-lg px-4 py-2 w-full text-slate-200 outline-none transition-all">
+      </div>
+      <div><label class="block text-slate-400 text-sm mb-1">Hours</label> <input type="number" id="pto-hours" step="0.5" min="0" max="24" placeholder="8.0" class="input-dark rounded-lg px-4 py-2 w-full text-slate-200 outline-none transition-all">
+      </div>
+      <div><label class="block text-slate-400 text-sm mb-1">Reason</label> <select id="pto-reason" class="input-dark rounded-lg px-4 py-2 w-full text-slate-200 outline-none transition-all"> <option value="Vacation">Vacation</option> <option value="Sick">Sick Leave</option> <option value="Personal">Personal Day</option> <option value="Other">Other</option> </select>
+      </div>
+      <div class="flex items-end"><button onclick="addPTO()" class="btn-primary w-full py-2 rounded-lg font-medium text-white transition-all hover:shadow-lg hover:shadow-indigo-500/25"> + Add Time Off </button>
+      </div>
+     </div>
+    </div><!-- PTO Stats -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 animate-fade-in" style="animation-delay: 0.1s;">
+     <div class="card-glass rounded-xl p-4">
+      <p class="text-slate-400 text-sm">Total PTO Hours</p>
+      <p id="pto-total" class="text-2xl font-bold text-cyan-400 mono">0.0</p>
+     </div>
+     <div class="card-glass rounded-xl p-4">
+      <p class="text-slate-400 text-sm">Vacation Days</p>
+      <p id="pto-vacation" class="text-2xl font-bold text-emerald-400 mono">0</p>
+     </div>
+     <div class="card-glass rounded-xl p-4">
+      <p class="text-slate-400 text-sm">Sick Days</p>
+      <p id="pto-sick" class="text-2xl font-bold text-amber-400 mono">0</p>
+     </div>
+     <div class="card-glass rounded-xl p-4">
+      <p class="text-slate-400 text-sm">Personal Days</p>
+      <p id="pto-personal" class="text-2xl font-bold text-pink-400 mono">0</p>
+     </div>
+    </div><!-- PTO List -->
+    <div class="card-glass rounded-xl p-5 animate-fade-in" style="animation-delay: 0.2s;">
+     <h2 class="text-lg font-semibold mb-4 text-slate-200">Time Off Records</h2>
+     <div id="pto-list" class="space-y-2 max-h-64 overflow-y-auto scrollbar-thin">
+      <p class="text-slate-500 text-center py-4">No time off logged yet.</p>
+     </div>
+    </div>
+   </div><!-- Toast Notification -->
+   <div id="toast" class="fixed bottom-4 right-4 bg-emerald-600 text-white px-4 py-3 rounded-lg shadow-lg transform translate-y-20 opacity-0 transition-all duration-300"><span id="toast-message">Entry added successfully!</span>
+   </div>
+  </div>
+  <script>
+    // Federal Holidays for 2026, 2027, 2028
+    const federalHolidays = {
+      2026: [
+        { date: '2026-01-01', name: "New Year's Day" },
+        { date: '2026-01-19', name: 'Martin Luther King Jr. Day' },
+        { date: '2026-02-16', name: "Presidents' Day" },
+        { date: '2026-05-25', name: 'Memorial Day' },
+        { date: '2026-06-19', name: 'Juneteenth' },
+        { date: '2026-07-03', name: 'Independence Day (Observed)' },
+        { date: '2026-09-07', name: 'Labor Day' },
+        { date: '2026-10-12', name: 'Columbus Day' },
+        { date: '2026-11-11', name: 'Veterans Day' },
+        { date: '2026-11-26', name: 'Thanksgiving Day' },
+        { date: '2026-12-25', name: 'Christmas Day' }
+      ],
+      2027: [
+        { date: '2027-01-01', name: "New Year's Day" },
+        { date: '2027-01-18', name: 'Martin Luther King Jr. Day' },
+        { date: '2027-02-15', name: "Presidents' Day" },
+        { date: '2027-05-31', name: 'Memorial Day' },
+        { date: '2027-06-18', name: 'Juneteenth (Observed)' },
+        { date: '2027-07-05', name: 'Independence Day (Observed)' },
+        { date: '2027-09-06', name: 'Labor Day' },
+        { date: '2027-10-11', name: 'Columbus Day' },
+        { date: '2027-11-11', name: 'Veterans Day' },
+        { date: '2027-11-25', name: 'Thanksgiving Day' },
+        { date: '2027-12-24', name: 'Christmas Day (Observed)' }
+      ],
+      2028: [
+        { date: '2028-01-01', name: "New Year's Day" },
+        { date: '2028-01-17', name: 'Martin Luther King Jr. Day' },
+        { date: '2028-02-21', name: "Presidents' Day" },
+        { date: '2028-05-29', name: 'Memorial Day' },
+        { date: '2028-06-19', name: 'Juneteenth' },
+        { date: '2028-07-04', name: 'Independence Day' },
+        { date: '2028-09-04', name: 'Labor Day' },
+        { date: '2028-10-09', name: 'Columbus Day' },
+        { date: '2028-11-10', name: 'Veterans Day (Observed)' },
+        { date: '2028-11-23', name: 'Thanksgiving Day' },
+        { date: '2028-12-25', name: 'Christmas Day' }
+      ]
+    };
+
+    // App State
+    let timeEntries = [];
+    let currentYear = 2026;
+    let currentMonth = 0;
+
+    // Default config
+    const defaultConfig = {
+      app_title: 'Trackercel',
+      hours_label: 'Log Hours',
+      goal_label: '🎯 Hours Goal Calculator',
+      background_color: '#0f172a',
+      surface_color: '#1e293b',
+      text_color: '#e2e8f0',
+      primary_action: '#6366f1',
+      secondary_action: '#8b5cf6'
+    };
+
+    let config = { ...defaultConfig };
+
+    // Initialize SDKs
+    async function initApp() {
+      // Initialize Element SDK
+      if (window.elementSdk) {
+        window.elementSdk.init({
+          defaultConfig,
+          onConfigChange: async (newConfig) => {
+            config = { ...defaultConfig, ...newConfig };
+            applyConfig();
+          },
+          mapToCapabilities: (cfg) => ({
+            recolorables: [
+              {
+                get: () => cfg.background_color || defaultConfig.background_color,
+                set: (v) => { cfg.background_color = v; window.elementSdk.setConfig({ background_color: v }); }
+              },
+              {
+                get: () => cfg.surface_color || defaultConfig.surface_color,
+                set: (v) => { cfg.surface_color = v; window.elementSdk.setConfig({ surface_color: v }); }
+              },
+              {
+                get: () => cfg.text_color || defaultConfig.text_color,
+                set: (v) => { cfg.text_color = v; window.elementSdk.setConfig({ text_color: v }); }
+              },
+              {
+                get: () => cfg.primary_action || defaultConfig.primary_action,
+                set: (v) => { cfg.primary_action = v; window.elementSdk.setConfig({ primary_action: v }); }
+              },
+              {
+                get: () => cfg.secondary_action || defaultConfig.secondary_action,
+                set: (v) => { cfg.secondary_action = v; window.elementSdk.setConfig({ secondary_action: v }); }
+              }
+            ],
+            borderables: [],
+            fontEditable: {
+              get: () => cfg.font_family || 'Space Grotesk',
+              set: (v) => { cfg.font_family = v; window.elementSdk.setConfig({ font_family: v }); }
+            },
+            fontSizeable: {
+              get: () => cfg.font_size || 16,
+              set: (v) => { cfg.font_size = v; window.elementSdk.setConfig({ font_size: v }); }
+            }
+          }),
+          mapToEditPanelValues: (cfg) => new Map([
+            ['app_title', cfg.app_title || defaultConfig.app_title],
+            ['hours_label', cfg.hours_label || defaultConfig.hours_label],
+            ['goal_label', cfg.goal_label || defaultConfig.goal_label]
+          ])
+        });
+      }
+
+      // Initialize Data SDK
+      if (window.dataSdk) {
+        const result = await window.dataSdk.init({
+          onDataChanged: (data) => {
+            timeEntries = data;
+            renderAll();
+          }
+        });
+        if (!result.isOk) {
+          console.error('Failed to initialize Data SDK');
+        }
+      }
+
+      // Set initial date input
+      const today = new Date();
+      document.getElementById('input-date').value = today.toISOString().split('T')[0];
+      document.getElementById('pto-date').value = today.toISOString().split('T')[0];
+
+      // Event listeners
+      document.getElementById('year-select').addEventListener('change', (e) => {
+        currentYear = parseInt(e.target.value);
+        renderAll();
+      });
+
+      document.getElementById('month-select').addEventListener('change', (e) => {
+        currentMonth = parseInt(e.target.value);
+        renderAll();
+      });
+
+      renderAll();
+    }
+
+    function applyConfig() {
+      const fontFamily = config.font_family || 'Space Grotesk';
+      const fontSize = config.font_size || 16;
+      const bgColor = config.background_color || defaultConfig.background_color;
+      const surfaceColor = config.surface_color || defaultConfig.surface_color;
+      const textColor = config.text_color || defaultConfig.text_color;
+      const primaryAction = config.primary_action || defaultConfig.primary_action;
+      const secondaryAction = config.secondary_action || defaultConfig.secondary_action;
+
+      document.body.style.fontFamily = `${fontFamily}, sans-serif`;
+      document.body.style.fontSize = `${fontSize}px`;
+      document.body.style.background = `linear-gradient(135deg, ${bgColor} 0%, ${surfaceColor} 50%, ${bgColor} 100%)`;
+      document.body.style.color = textColor;
+
+      document.getElementById('app-title').textContent = config.app_title || defaultConfig.app_title;
+      document.getElementById('hours-label').textContent = config.hours_label || defaultConfig.hours_label;
+      document.getElementById('goal-label').textContent = config.goal_label || defaultConfig.goal_label;
+
+      // Update primary buttons
+      document.querySelectorAll('.btn-primary').forEach(btn => {
+        btn.style.background = `linear-gradient(135deg, ${primaryAction} 0%, ${secondaryAction} 100%)`;
+      });
+
+      // Update cards
+      document.querySelectorAll('.card-glass').forEach(card => {
+        card.style.background = `rgba(${hexToRgb(surfaceColor)}, 0.7)`;
+        card.style.borderColor = `rgba(${hexToRgb(primaryAction)}, 0.2)`;
+      });
+    }
+
+    function hexToRgb(hex) {
+      const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+      return result ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` : '30, 41, 59';
+    }
+
+    function renderAll() {
+      renderCalendar();
+      renderEntries();
+      renderStats();
+      renderHolidays();
+      renderPTOList();
+      renderPTOStats();
+    }
+
+    function switchTab(tab) {
+      const tabs = ['tracker', 'goal', 'pto'];
+      tabs.forEach(t => {
+        document.getElementById(`tab-${t}`).classList.remove('tab-active');
+        document.getElementById(`tab-${t}`).classList.add('bg-slate-700/50');
+        document.getElementById(`${t}-content`).classList.add('hidden');
+      });
+      document.getElementById(`tab-${tab}`).classList.add('tab-active');
+      document.getElementById(`tab-${tab}`).classList.remove('bg-slate-700/50');
+      document.getElementById(`${tab}-content`).classList.remove('hidden');
+    }
+
+    function isHoliday(dateStr) {
+      const year = parseInt(dateStr.split('-')[0]);
+      const holidays = federalHolidays[year] || [];
+      return holidays.find(h => h.date === dateStr);
+    }
+
+    function getMonthHolidays(year, month) {
+      const holidays = federalHolidays[year] || [];
+      return holidays.filter(h => {
+        const hMonth = parseInt(h.date.split('-')[1]) - 1;
+        return hMonth === month;
+      });
+    }
+
+    function getEntriesForDate(dateStr) {
+      return timeEntries.filter(e => e.date === dateStr);
+    }
+
+    function getWorkingDaysInPeriod(startDate, endDate) {
+      let count = 0;
+      let holidays = 0;
+      const current = new Date(startDate);
+      while (current <= endDate) {
+        const day = current.getDay();
+        const dateStr = current.toISOString().split('T')[0];
+        if (day !== 0 && day !== 6) {
+          if (isHoliday(dateStr)) {
+            holidays++;
+          } else {
+            count++;
+          }
+        }
+        current.setDate(current.getDate() + 1);
+      }
+      return { workingDays: count, holidays };
+    }
+
+    function renderCalendar() {
+      const grid = document.getElementById('calendar-grid');
+      grid.innerHTML = '';
+
+      const firstDay = new Date(currentYear, currentMonth, 1);
+      const lastDay = new Date(currentYear, currentMonth + 1, 0);
+      const startDay = firstDay.getDay();
+
+      // Empty cells for days before month starts
+      for (let i = 0; i < startDay; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'h-16 md:h-20';
+        grid.appendChild(cell);
+      }
+
+      // Days of the month
+      for (let day = 1; day <= lastDay.getDate(); day++) {
+        const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const date = new Date(currentYear, currentMonth, day);
+        const dayOfWeek = date.getDay();
+        const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+        const holiday = isHoliday(dateStr);
+        const entries = getEntriesForDate(dateStr);
+        const workEntries = entries.filter(e => e.type === 'work');
+        const ptoEntries = entries.filter(e => e.type === 'pto');
+        const totalHours = workEntries.reduce((sum, e) => sum + (e.hours || 0), 0);
+        const ptoHours = ptoEntries.reduce((sum, e) => sum + (e.hours || 0), 0);
+
+        const cell = document.createElement('div');
+        cell.className = `h-16 md:h-20 rounded-lg p-1 md:p-2 text-xs transition-all cursor-pointer hover:ring-2 hover:ring-indigo-400 ${
+          isWeekend ? 'bg-slate-800/30' : 'bg-slate-700/30'
+        } ${holiday ? 'ring-1 ring-orange-500/50' : ''}`;
+
+        let content = `<div class="font-medium ${isWeekend ? 'text-slate-500' : 'text-slate-300'}">${day}</div>`;
+        
+        if (holiday) {
+          content += `<div class="holiday-badge text-white text-xs px-1 rounded truncate mt-1" title="${holiday.name}">🎉</div>`;
+        }
+        
+        if (totalHours > 0) {
+          content += `<div class="bg-indigo-500/30 text-indigo-300 text-xs px-1 rounded mt-1 mono">${totalHours}h</div>`;
+        }
+        
+        if (ptoHours > 0) {
+          content += `<div class="pto-badge text-white text-xs px-1 rounded mt-1">${ptoHours}h</div>`;
+        }
+
+        cell.innerHTML = content;
+        cell.onclick = () => {
+          document.getElementById('input-date').value = dateStr;
+          document.getElementById('pto-date').value = dateStr;
+        };
+        grid.appendChild(cell);
+      }
+    }
+
+    function renderEntries() {
+      const list = document.getElementById('entries-list');
+      const monthEntries = timeEntries.filter(e => {
+        if (e.type !== 'work') return false;
+        const [year, month] = e.date.split('-').map(Number);
+        return year === currentYear && month - 1 === currentMonth;
+      }).sort((a, b) => b.date.localeCompare(a.date));
+
+      if (monthEntries.length === 0) {
+        list.innerHTML = '<p class="text-slate-500 text-center py-4">No entries yet. Start logging your hours!</p>';
+        return;
+      }
+
+      list.innerHTML = monthEntries.map(entry => {
+        const date = new Date(entry.date + 'T00:00:00');
+        const holiday = isHoliday(entry.date);
+        return `
+          <div class="flex items-center justify-between bg-slate-800/50 rounded-lg p-3" data-id="${entry.__backendId}">
+            <div class="flex items-center gap-3">
+              <div class="w-12 h-12 bg-indigo-500/20 rounded-lg flex items-center justify-center">
+                <span class="text-indigo-400 font-bold mono">${entry.hours}h</span>
+              </div>
+              <div>
+                <p class="font-medium text-slate-200">${date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</p>
+                <p class="text-slate-400 text-sm">${entry.notes || 'No notes'}</p>
+                ${holiday ? `<span class="text-orange-400 text-xs">🎉 ${holiday.name}</span>` : ''}
+              </div>
+            </div>
+            <button onclick="deleteEntry('${entry.__backendId}')" class="text-red-400 hover:text-red-300 hover:bg-red-500/20 p-2 rounded-lg transition-all">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+            </button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderStats() {
+      const monthEntries = timeEntries.filter(e => {
+        if (e.type !== 'work') return false;
+        const [year, month] = e.date.split('-').map(Number);
+        return year === currentYear && month - 1 === currentMonth;
+      });
+
+      const totalHours = monthEntries.reduce((sum, e) => sum + (e.hours || 0), 0);
+      const uniqueDays = new Set(monthEntries.map(e => e.date)).size;
+      const avgHours = uniqueDays > 0 ? (totalHours / uniqueDays).toFixed(1) : 0;
+      const monthHolidays = getMonthHolidays(currentYear, currentMonth).length;
+
+      document.getElementById('stat-total').textContent = totalHours.toFixed(1);
+      document.getElementById('stat-days').textContent = uniqueDays;
+      document.getElementById('stat-avg').textContent = avgHours;
+      document.getElementById('stat-holidays').textContent = monthHolidays;
+    }
+
+    function renderHolidays() {
+      const list = document.getElementById('holiday-list');
+      const holidays = federalHolidays[currentYear] || [];
+      
+      list.innerHTML = holidays.map(h => {
+        const date = new Date(h.date + 'T00:00:00');
+        const isPast = date < new Date();
+        return `
+          <div class="flex items-center gap-3 bg-slate-800/50 rounded-lg p-3 ${isPast ? 'opacity-50' : ''}">
+            <div class="w-10 h-10 holiday-badge rounded-lg flex items-center justify-center text-lg">
+              🎉
+            </div>
+            <div>
+              <p class="font-medium text-slate-200">${h.name}</p>
+              <p class="text-slate-400 text-sm">${date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</p>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderPTOList() {
+      const list = document.getElementById('pto-list');
+      const ptoEntries = timeEntries.filter(e => {
+        if (e.type !== 'pto') return false;
+        const [year, month] = e.date.split('-').map(Number);
+        return year === currentYear && month - 1 === currentMonth;
+      }).sort((a, b) => b.date.localeCompare(a.date));
+
+      if (ptoEntries.length === 0) {
+        list.innerHTML = '<p class="text-slate-500 text-center py-4">No time off logged yet.</p>';
+        return;
+      }
+
+      list.innerHTML = ptoEntries.map(entry => {
+        const date = new Date(entry.date + 'T00:00:00');
+        return `
+          <div class="flex items-center justify-between bg-slate-800/50 rounded-lg p-3" data-id="${entry.__backendId}">
+            <div class="flex items-center gap-3">
+              <div class="w-12 h-12 pto-badge rounded-lg flex items-center justify-center">
+                <span class="text-white font-bold mono">${entry.hours}h</span>
+              </div>
+              <div>
+                <p class="font-medium text-slate-200">${date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</p>
+                <p class="text-slate-400 text-sm">${entry.notes || 'Time Off'}</p>
+              </div>
+            </div>
+            <button onclick="deleteEntry('${entry.__backendId}')" class="text-red-400 hover:text-red-300 hover:bg-red-500/20 p-2 rounded-lg transition-all">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+            </button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderPTOStats() {
+      const ptoEntries = timeEntries.filter(e => {
+        if (e.type !== 'pto') return false;
+        const [year] = e.date.split('-').map(Number);
+        return year === currentYear;
+      });
+
+      const totalPTO = ptoEntries.reduce((sum, e) => sum + (e.hours || 0), 0);
+      const vacation = ptoEntries.filter(e => e.notes === 'Vacation').reduce((sum, e) => sum + (e.hours || 0), 0);
+      const sick = ptoEntries.filter(e => e.notes === 'Sick').reduce((sum, e) => sum + (e.hours || 0), 0);
+      const personal = ptoEntries.filter(e => e.notes === 'Personal').reduce((sum, e) => sum + (e.hours || 0), 0);
+
+      document.getElementById('pto-total').textContent = totalPTO.toFixed(1);
+      document.getElementById('pto-vacation').textContent = (vacation / 8).toFixed(1);
+      document.getElementById('pto-sick').textContent = (sick / 8).toFixed(1);
+      document.getElementById('pto-personal').textContent = (personal / 8).toFixed(1);
+    }
+
+    async function addEntry() {
+      const dateInput = document.getElementById('input-date');
+      const hoursInput = document.getElementById('input-hours');
+      const notesInput = document.getElementById('input-notes');
+      const btn = document.getElementById('btn-add');
+
+      const date = dateInput.value;
+      const hours = parseFloat(hoursInput.value);
+      const notes = notesInput.value.trim();
+
+      if (!date || !hours || hours <= 0) {
+        showToast('Please enter a valid date and hours', 'error');
+        return;
+      }
+
+      if (timeEntries.length >= 999) {
+        showToast('Maximum entries reached (999). Please delete some entries.', 'error');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Adding...';
+
+      if (window.dataSdk) {
+        const result = await window.dataSdk.create({
+          date,
+          hours,
+          type: 'work',
+          notes
+        });
+
+        if (result.isOk) {
+          hoursInput.value = '';
+          notesInput.value = '';
+          showToast('Hours logged successfully!');
+        } else {
+          showToast('Failed to add entry. Please try again.', 'error');
+        }
+      }
+
+      btn.disabled = false;
+      btn.textContent = '+ Add Entry';
+    }
+
+    async function addPTO() {
+      const dateInput = document.getElementById('pto-date');
+      const hoursInput = document.getElementById('pto-hours');
+      const reasonSelect = document.getElementById('pto-reason');
+
+      const date = dateInput.value;
+      const hours = parseFloat(hoursInput.value);
+      const reason = reasonSelect.value;
+
+      if (!date || !hours || hours <= 0) {
+        showToast('Please enter a valid date and hours', 'error');
+        return;
+      }
+
+      if (timeEntries.length >= 999) {
+        showToast('Maximum entries reached (999). Please delete some entries.', 'error');
+        return;
+      }
+
+      if (window.dataSdk) {
+        const result = await window.dataSdk.create({
+          date,
+          hours,
+          type: 'pto',
+          notes: reason
+        });
+
+        if (result.isOk) {
+          hoursInput.value = '';
+          showToast('Time off logged successfully!');
+        } else {
+          showToast('Failed to add time off. Please try again.', 'error');
+        }
+      }
+    }
+
+    async function deleteEntry(id) {
+      const entry = timeEntries.find(e => e.__backendId === id);
+      if (!entry) return;
+
+      const btn = document.querySelector(`[data-id="${id}"] button`);
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '...';
+      }
+
+      if (window.dataSdk) {
+        const result = await window.dataSdk.delete(entry);
+        if (result.isOk) {
+          showToast('Entry deleted');
+        } else {
+          showToast('Failed to delete entry', 'error');
+          if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>';
+          }
+        }
+      }
+    }
+
+    function calculateGoal() {
+      const hoursInput = document.getElementById('goal-hours');
+      const periodSelect = document.getElementById('goal-period');
+      
+      const targetHours = parseFloat(hoursInput.value);
+      const period = periodSelect.value;
+
+      if (!targetHours || targetHours <= 0) {
+        showToast('Please enter valid target hours', 'error');
+        return;
+      }
+
+      let endDate = new Date(currentYear, currentMonth, 1);
+      const startDate = new Date(currentYear, currentMonth, 1);
+
+      if (period === 'month') {
+        endDate = new Date(currentYear, currentMonth + 1, 0);
+      } else if (period === 'quarter') {
+        endDate = new Date(currentYear, currentMonth + 3, 0);
+      } else {
+        const weeks = parseInt(period);
+        endDate = new Date(startDate);
+        endDate.setDate(endDate.getDate() + (weeks * 7) - 1);
+      }
+
+      const { workingDays, holidays } = getWorkingDaysInPeriod(startDate, endDate);
+      const hoursPerDay = workingDays > 0 ? (targetHours / workingDays).toFixed(2) : 0;
+      const hoursPerWeek = (hoursPerDay * 5).toFixed(1);
+
+      document.getElementById('goal-workdays').textContent = workingDays;
+      document.getElementById('goal-holidays').textContent = holidays;
+      document.getElementById('goal-daily').textContent = hoursPerDay;
+      document.getElementById('goal-weekly').textContent = hoursPerWeek;
+
+      // Generate schedule breakdown
+      const schedule = document.getElementById('goal-schedule');
+      let scheduleHtml = '<h3 class="text-slate-300 font-medium mb-2">Suggested Daily Schedule</h3>';
+      scheduleHtml += '<div class="grid grid-cols-5 gap-2 text-center text-sm">';
+      
+      const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
+      days.forEach(day => {
+        scheduleHtml += `
+          <div class="bg-indigo-500/20 rounded-lg p-2">
+            <p class="text-slate-400">${day}</p>
+            <p class="text-indigo-400 font-bold mono">${hoursPerDay}h</p>
+          </div>
+        `;
+      });
+      scheduleHtml += '</div>';
+      
+      if (parseFloat(hoursPerDay) > 8) {
+        scheduleHtml += `<p class="text-amber-400 text-sm mt-3">⚠️ This requires more than 8 hours per day. Consider extending the time period or reducing target hours.</p>`;
+      }
+
+      schedule.innerHTML = scheduleHtml;
+      document.getElementById('goal-result').classList.remove('hidden');
+    }
+
+    function exportToExcel() {
+      const monthEntries = timeEntries.filter(e => {
+        const [year, month] = e.date.split('-').map(Number);
+        return year === currentYear && month - 1 === currentMonth;
+      }).sort((a, b) => a.date.localeCompare(b.date));
+
+      const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
+                         'July', 'August', 'September', 'October', 'November', 'December'];
+      
+      // Build CSV content
+      let csv = `Trackercel Time Report - ${monthNames[currentMonth]} ${currentYear}\n\n`;
+      csv += 'Date,Day,Type,Hours,Notes,Holiday\n';
+
+      const firstDay = new Date(currentYear, currentMonth, 1);
+      const lastDay = new Date(currentYear, currentMonth + 1, 0);
+
+      for (let day = 1; day <= lastDay.getDate(); day++) {
+        const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const date = new Date(currentYear, currentMonth, day);
+        const dayName = date.toLocaleDateString('en-US', { weekday: 'long' });
+        const holiday = isHoliday(dateStr);
+        const dayEntries = monthEntries.filter(e => e.date === dateStr);
+
+        if (dayEntries.length > 0) {
+          dayEntries.forEach(entry => {
+            csv += `${dateStr},${dayName},${entry.type === 'work' ? 'Work' : 'PTO'},${entry.hours},"${entry.notes || ''}",${holiday ? holiday.name : ''}\n`;
+          });
+        } else {
+          const dayOfWeek = date.getDay();
+          if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+            csv += `${dateStr},${dayName},,0,,${holiday ? holiday.name : ''}\n`;
+          }
+        }
+      }
+
+      // Summary section
+      const workEntries = monthEntries.filter(e => e.type === 'work');
+      const ptoEntries = monthEntries.filter(e => e.type === 'pto');
+      const totalWork = workEntries.reduce((sum, e) => sum + (e.hours || 0), 0);
+      const totalPTO = ptoEntries.reduce((sum, e) => sum + (e.hours || 0), 0);
+      const workDays = new Set(workEntries.map(e => e.date)).size;
+
+      csv += '\n\nSUMMARY\n';
+      csv += `Total Work Hours,${totalWork}\n`;
+      csv += `Total PTO Hours,${totalPTO}\n`;
+      csv += `Days Worked,${workDays}\n`;
+      csv += `Average Hours/Day,${workDays > 0 ? (totalWork / workDays).toFixed(2) : 0}\n`;
+
+      // Download
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `Trackercel_${monthNames[currentMonth]}_${currentYear}.csv`;
+      link.click();
+      
+      showToast('Report downloaded successfully!');
+    }
+
+    function showToast(message, type = 'success') {
+      const toast = document.getElementById('toast');
+      const toastMessage = document.getElementById('toast-message');
+      
+      toastMessage.textContent = message;
+      toast.className = `fixed bottom-4 right-4 ${type === 'error' ? 'bg-red-600' : 'bg-emerald-600'} text-white px-4 py-3 rounded-lg shadow-lg transition-all duration-300`;
+      toast.style.transform = 'translateY(0)';
+      toast.style.opacity = '1';
+
+      setTimeout(() => {
+        toast.style.transform = 'translateY(80px)';
+        toast.style.opacity = '0';
+      }, 3000);
+    }
+
+    // Initialize app
+    initApp();
+  </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9ba159c6a2732c86',t:'MTc2Nzc2Njg0MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
